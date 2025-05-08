@@ -3,14 +3,60 @@ org: upb2025
 # "service" is the name of this project. This will also be added to your AWS resource names.
 service: serverless-image-app
 
+package:
+  exclude:
+    - config.json
+    - package.json
+    - package-lock.json
+    - README.md
+    - .gitignore      
+    - .serverless/**
+
 provider:
   name: aws
+  region: ${file(config.json):AWS_REGION}
   runtime: nodejs20.x
-
+  environment:
+    BUCKET_NAME: ${file(config.json):S3_IMAGE_BUCKET}
+    TABLE_NAME: ${file(config.json):DYNAMODB_TABLE_NAME}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:*
+        - rekognition:DetectLabels
+      Resource:
+        - arn:aws:s3:::${file(config.json):S3_IMAGE_BUCKET}/*
 functions:
-  hello:
-    handler: handler.hello
+  danielGetSignedUrl:
+    handler: handler.getSignedUrl
     events:
-      - httpApi:
-          path: /
+      - http:
+          path: sign-url
           method: get
+          cors: true
+
+  danielProcessImage:
+    handler: recognize.processImage
+    events:
+      - s3:
+          bucket: ${self:provider.environment.BUCKET_NAME}
+          event: s3:ObjectCreated:Put
+          existing: true
+
+resources:
+ Resources:
+   UploadBucket:
+     Type: AWS::S3::Bucket
+     Properties:
+       BucketName: ${self:provider.environment.BUCKET_NAME}
+   ImageTagsTable:
+     Type: AWS::DynamoDB::Table
+     Properties:
+       TableName: ${self:provider.environment.TABLE_NAME}
+       AttributeDefinitions:
+         - AttributeName: image
+           AttributeType: S
+       KeySchema:
+         - AttributeName: image
+           KeyType: HASH
+       BillingMode: PAY_PER_REQUEST
