@@ -11,6 +11,9 @@ package:
     - README.md
     - .gitignore      
     - .serverless/**
+    - node_modules/**
+    - nodejs/**
+    - layer_content.zip
 
 provider:
   name: aws
@@ -37,11 +40,22 @@ functions:
 
   danielProcessImage:
     handler: recognize.processImage
+    layers:
+      - { Ref: DanielDependenciesLambdaLayer }
     events:
       - s3:
           bucket: ${self:provider.environment.BUCKET_NAME}
           event: s3:ObjectCreated:Put
           existing: true
+
+
+layers:
+  danielDependencies:
+    name: 'daniel-serverless-dependencies'
+    compatibleRuntimes:
+      - "nodejs20.x"
+    package:
+      artifact: layer_content.zip
 
 resources:
  Resources:
