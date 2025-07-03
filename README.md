@@ -5,4 +5,4 @@
  - CUENTA DE AWS
 
 ## DESCRIPCION
-El proyecto de image recognition busca que los estudiantes o cualquier persona pueda aprender mas acerca de serverless framework y lambda functions.
+Proyecto utilizando serverless framework y lambda functions.
